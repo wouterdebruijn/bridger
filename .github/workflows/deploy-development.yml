@@ -54,4 +54,5 @@ jobs:
         script: |
           docker load < $APPLICATION_NAME/$APPLICATION_NAME.tar.gz
           docker tag $APPLICATION_NAME:${{ steps.tag.outputs.tag }} $APPLICATION_NAME:latest
+          docker compose --project-directory "$APPLICATION_NAME" up -d
         
