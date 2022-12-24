@@ -43,7 +43,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
         source: "$APPLICATION_NAME.tar.gz"
-        target: "$APPLICATION_NAME/"
+        target: "$APPLICATION_NAME"
         
     - name: Deploy new image to latest
       uses: appleboy/ssh-action@v0.1.6
