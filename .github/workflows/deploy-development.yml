@@ -52,6 +52,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
         script: |
-          docker load < "$APPLICATION_NAME/$APPLICATION_NAME.tar.gz"
-          docker tag "$APPLICATION_NAME:${{ steps.tag.outputs.tag }}" "$APPLICATION_NAME:latest"
+          docker load < "${{ env.APPLICATION_NAME }}/${{ env.APPLICATION_NAME }}.tar.gz"
+          docker tag "${{ env.APPLICATION_NAME }}:${{ steps.tag.outputs.tag }}" "${{ env.APPLICATION_NAME }}:latest"
           docker compose --project-directory "${{ env.APPLICATION_NAME }}" up -d
+        
