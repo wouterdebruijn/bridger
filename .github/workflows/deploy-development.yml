@@ -1,0 +1,60 @@
+name: Deploy Development
+
+on:
+  push:
+    branches: [ "development" ]
+
+env:
+  APPLICATION_NAME: "bridger-dev"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - run: npm ci
+
+    - run: npm run build --if-present
+
+    - name: Set image tag
+      id: tag
+      run: echo "::set-output name=tag::$(date +%s)"
+
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag $APPLICATION_NAME:${{ steps.tag.outputs.tag }}
+
+    - name: Export Docker image to archive
+      run: docker save --output "$APPLICATION_NAME.tar.gz" $APPLICATION_NAME:${{ steps.tag.outputs.tag }}
+
+    - name: Copy image to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        source: "$APPLICATION_NAME.tar.gz"
+        target: "$APPLICATION_NAME/"
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy new image to latest
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            docker load < $APPLICATION_NAME/$APPLICATION_NAME.tar.gz
+            docker tag $APPLICATION_NAME:${{ steps.tag.outputs.tag }} $APPLICATION_NAME:latest
+
+        
