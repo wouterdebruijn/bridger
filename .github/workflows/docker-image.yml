@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag Bridger:$(date +%s)
+      run: docker build . --file Dockerfile --tag bridger:$(date +%s)
     - name: Export Docker image to archive
       run: docker save --output "bridger-$(date +%s).tar.gz" bridger:$(date +%s)
     - name: Copy image to server
