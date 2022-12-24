@@ -9,6 +9,9 @@ WORKDIR /usr/src/app
 # where available (npm@5+)
 COPY package*.json ./
 
+# Copy TS config for build options
+COPY tsconfig.json ./
+
 RUN npm install
 RUN npm ci --only=production
 
