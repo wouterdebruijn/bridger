@@ -19,4 +19,4 @@ RUN npm ci --only=production
 COPY dist ./
 
 EXPOSE 3000
-CMD [ "node", "dist/main.ts" ]
+CMD [ "node", "dist/main.js" ]
