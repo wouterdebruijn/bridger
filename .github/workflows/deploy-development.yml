@@ -44,17 +44,14 @@ jobs:
         key: ${{ secrets.KEY }}
         source: "$APPLICATION_NAME.tar.gz"
         target: "$APPLICATION_NAME/"
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy new image to latest
-        uses: appleboy/ssh-action@v0.1.6
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          script: |
-            docker load < $APPLICATION_NAME/$APPLICATION_NAME.tar.gz
-            docker tag $APPLICATION_NAME:${{ steps.tag.outputs.tag }} $APPLICATION_NAME:latest
-
+        
+    - name: Deploy new image to latest
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        script: |
+          docker load < $APPLICATION_NAME/$APPLICATION_NAME.tar.gz
+          docker tag $APPLICATION_NAME:${{ steps.tag.outputs.tag }} $APPLICATION_NAME:latest
         
