@@ -24,20 +24,22 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag bridger:$(date +%s)
+      run:  |
+        TAG="$(date +%s)"
+        docker build . --file Dockerfile --tag bridger:$TAG
     - name: Export Docker image to archive
-      run: docker save --output "bridger-$(date +%s).tar.gz" bridger:$(date +%s)
+      run: docker save --output "bridger-$TAG.tar.gz" bridger:$TAG
     - name: Copy image to server
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
-        source: "bridger-$(date +%s).tar.gz"
+        source: "bridger-$TAG.tar.gz"
         target: "bridger/"
     - name: Deploy new image to latest
       run: |
-        docker load < bridger-$(date +%s).tar.gz
-        docker image tag bridger:$(date +%s) bridger:latest
+        docker load < bridger-$TAG.tar.gz
+        docker image tag bridger:$TAG bridger:latest
         
       
