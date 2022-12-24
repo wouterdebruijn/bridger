@@ -16,7 +16,7 @@ RUN npm install
 RUN npm ci --only=production
 
 # Bundle app source
-COPY dist ./
+COPY dist ./dist
 
 EXPOSE 3000
 CMD [ "node", "dist/main.js" ]
