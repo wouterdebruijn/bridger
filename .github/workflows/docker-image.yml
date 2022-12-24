@@ -27,8 +27,7 @@ jobs:
       id: tag
       run: echo "::set-output name=tag::$(date +%s)"
     - name: Build the Docker image
-      run:  |
-        docker build . --file Dockerfile --tag bridger:${{ steps.tag.outputs.tag }}
+      run: docker build . --file Dockerfile --tag bridger:${{ steps.tag.outputs.tag }}
     - name: Export Docker image to archive
       run: docker save --output "bridger.tar.gz" bridger:${{ steps.tag.outputs.tag }}
     - name: Copy image to server
@@ -40,8 +39,13 @@ jobs:
         source: "bridger.tar.gz"
         target: "bridger/"
     - name: Deploy new image to latest
-      run: |
-        docker load < bridger.tar.gz
-        docker tag bridger:${{ steps.tag.outputs.tag }} bridger:latest
-        
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        script: |
+          docker load < bridger.tar.gz
+          docker tag bridger:${{ steps.tag.outputs.tag }} bridger:latest
+
       
