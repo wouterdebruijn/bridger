@@ -28,7 +28,10 @@ jobs:
         TAG="$(date +%s)"
         docker build . --file Dockerfile --tag bridger:$TAG
     - name: Export Docker image to archive
-      run: docker save --output "bridger-$TAG.tar.gz" bridger:$TAG
+      run:  |
+        echo "$TAG"
+        docker image ls
+        docker save --output "bridger-$TAG.tar.gz" bridger:$TAG
     - name: Copy image to server
       uses: appleboy/scp-action@master
       with:
