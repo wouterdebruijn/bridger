@@ -8,6 +8,22 @@ env:
   APPLICATION_NAME: "bridger-dev"
 
 jobs:
+  quality:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run build --if-present
+
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -36,7 +52,21 @@ jobs:
     - name: Export Docker image to archive
       run: docker save --output "$APPLICATION_NAME.tar.gz" $APPLICATION_NAME:${{ steps.tag.outputs.tag }}
 
-    - name: Copy image to server
+    - uses: actions/upload-artifact@v3
+      with:
+        name: image
+        path: ${{ env.APPLICATION_NAME }}.tar.gz
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [quality, build]
+    - name: Download artifact
+      uses: actions/download-artifact@main
+      with:
+        name: image
+        path: ${{ env.APPLICATION_NAME }}.tar.gz
+
+    - name: Copy image to own infrastructure
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.HOST }}
@@ -45,7 +75,7 @@ jobs:
         source: "${{ env.APPLICATION_NAME }}.tar.gz"
         target: "${{ env.APPLICATION_NAME }}"
         
-    - name: Deploy new image to latest
+    - name: Deploy to own infrastructure
       uses: appleboy/ssh-action@v0.1.6
       with:
         host: ${{ secrets.HOST }}
@@ -55,4 +85,3 @@ jobs:
           docker load < "${{ env.APPLICATION_NAME }}/${{ env.APPLICATION_NAME }}.tar.gz"
           docker tag "${{ env.APPLICATION_NAME }}:${{ steps.tag.outputs.tag }}" "${{ env.APPLICATION_NAME }}:latest"
           docker compose --project-directory "${{ env.APPLICATION_NAME }}" up -d
-        
