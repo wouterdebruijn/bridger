@@ -1,10 +1,10 @@
 # CI/CD Pipeline testing repositoy
-This repository contains an example NodeJS application serving as a web app. GitHub actions use the provider Dockerfile to create a container and deploy it on the development and production server. The server runs custom software of project management and dashboard displays.
+This repository contains an example NodeJS application serving as a web app. GitHub actions use the provider Dockerfile to create a container and deploy it on the development and production server.
 
-Serves as an example project for [https://github.com/wouterdebruijn/boxer](Boxer Deployment)
+Production and development instances are managed by [Boxer Deployment](https://github.com/wouterdebruijn/boxer). 
 
 ## Features
-This projects fucus is on a minimal but complete CI/CD pipeline compatible with GitHub and other Git like platforms.
+This project's focus is on a minimal but complete CI/CD pipeline compatible with GitHub and other Git like platforms.
  - 🚀 Fully automated deployment of applications
  - 🏗 Depolyment to your own self-hosted infrastructure
  - 🔨 Easly configurable for new projects
