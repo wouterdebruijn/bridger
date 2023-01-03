@@ -9,9 +9,6 @@ env:
   APPLICATION_NAME: "${{ github.event.repository.name }}"
   DEPLOYMENT_FOLDER: "${{ github.event.repository.name }}-development"
 
-requires:
-  - quality
-
 jobs:
   build:
     runs-on: ubuntu-latest
