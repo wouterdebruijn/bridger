@@ -30,7 +30,7 @@ jobs:
 
       - name: Set image tag
         id: tag
-        run: echo "::set-output name=tag::$(date +%s)"
+        run: echo "tag=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Build the Docker image
         run: docker build . --file Dockerfile --tag $APPLICATION_NAME:unstable
