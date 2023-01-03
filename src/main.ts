@@ -4,7 +4,7 @@ const app = express();
 
 app.get("/", (req, res) => {
     console.log(req.headers["user-agent"]);
-    res.send("Application deployment complete!");
+    res.send("Hello World");
 });
 
 app.listen(3000, () => {
