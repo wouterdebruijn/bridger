@@ -1,12 +1,12 @@
-name: Deploy Production on Release
+name: Deploy Development on Pre-Release
 
 on:
   release:
-    types: [released]
+    types: [prereleased]
 
 env:
   APPLICATION_NAME: "${{ github.event.repository.name }}"
-  DEPLOYMENT_FOLDER: "${{ github.event.repository.name }}"
+  DEPLOYMENT_FOLDER: "${{ github.event.repository.name }}-development"
 
 jobs:
   build:
