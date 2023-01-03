@@ -1,11 +1,11 @@
-name: Deploy Production
+name: Deploy Production on Release
 
 on:
-  push:
-    branches: [ "production" ]
+  release:
+    types: [published]
 
 env:
-  APPLICATION_NAME: "bridger"
+  APPLICATION_NAME: "${{ github.event.repository.name }}"
 
 jobs:
   build:
@@ -14,45 +14,40 @@ jobs:
       matrix:
         node-version: [18.x]
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
 
-    - run: npm ci
+      - run: npm ci
 
-    - run: npm run build --if-present
+      - run: npm run build --if-present
 
-    - name: Set image tag
-      id: tag
-      run: echo "::set-output name=tag::$(date +%s)"
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag $APPLICATION_NAME:${{ github.ref_name }}
 
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag $APPLICATION_NAME:${{ steps.tag.outputs.tag }}
+      - name: Export Docker image to archive
+        run: docker save --output "$APPLICATION_NAME.tar.gz" $APPLICATION_NAME:${{ github.ref_name }}
 
-    - name: Export Docker image to archive
-      run: docker save --output "$APPLICATION_NAME.tar.gz" $APPLICATION_NAME:${{ steps.tag.outputs.tag }}
+      - name: Copy image to own infrastructure
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          source: "${{ env.APPLICATION_NAME }}.tar.gz"
+          target: "${{ env.APPLICATION_NAME }}"
 
-    - name: Copy image to server
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.KEY }}
-        source: "${{ env.APPLICATION_NAME }}.tar.gz"
-        target: "${{ env.APPLICATION_NAME }}"
-        
-    - name: Deploy new image to latest
-      uses: appleboy/ssh-action@v0.1.6
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.KEY }}
-        script: |
-          docker load < "${{ env.APPLICATION_NAME }}/${{ env.APPLICATION_NAME }}.tar.gz"
-          docker tag "${{ env.APPLICATION_NAME }}:${{ steps.tag.outputs.tag }}" "${{ env.APPLICATION_NAME }}:latest"
-          docker compose --project-directory "${{ env.APPLICATION_NAME }}" up -d
-        
+      - name: Deploy to own infrastructure
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            docker load < "${{ env.APPLICATION_NAME }}/${{ env.APPLICATION_NAME }}.tar.gz"
+            docker tag "${{ env.APPLICATION_NAME }}:${{ github.ref_name }}" "${{ env.APPLICATION_NAME }}:latest"
+            docker compose --project-directory "${{ env.APPLICATION_NAME }}" up -d

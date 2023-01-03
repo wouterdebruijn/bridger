@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# CI/CD creation script by Wouter de Bruijn 2022-12-24
+
+# USAGE:
+# create-project <name>
+
+# Description:
+# Automaticly creates new user with project folder structure matching github action script.
+# Provides a Production and Development service for each project.
+# Projects are generated with a mininal docker-compose configuration with the expectation of being overwriten.
+
+# Set Project name
+PROJECT="$1"
+
+# Create new user for this applications data
+echo "Creating user..."
+useradd "$PROJECT" -G docker -m -s /bin/bash 1> /dev/null
+
+su - $PROJECT <<SCR
+	echo "Creating SSH key"
+	# Create new SSH key
+	mkdir keys &> /dev/null
+	cd keys
+	ssh-keygen -t ed25519 -N "" -C "$PROJECT" -f "$PROJECT" 1> /dev/null
+	cd ..
+
+	echo "Adding SSH key to authorized keys"
+	# Add SSH key to authorized keys
+	mkdir .ssh &> /dev/null
+	cat keys/$PROJECT.pub > .ssh/authorized_keys
+SCR
+
+su - $PROJECT <<SCR
+	echo "Creating project folders"
+	# Create production and development folders
+	mkdir "$PROJECT" &> /dev/null
+	mkdir "$PROJECT-dev" &> /dev/null
+
+	cat > $PROJECT/docker-compose.yml << TXT
+# Wouter de Bruijn Production project automaticly created with CI/CD tools
+# Used together with Github actions for automatic deployment of projects.
+
+services:
+  app:
+    image: $PROJECT:latest
+    networks: [ traefik ]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$PROJECT.rule=Host(\\\`$PROJECT.prod.ci.wouterdebruijn.nl\\\`)"
+      - "traefik.http.routers.$PROJECT.tls=true"
+      - "traefik.http.routers.$PROJECT.tls.certresolver=letsencrypt"
+networks:
+  traefik:
+    name: traefik_default
+TXT
+
+	cat > $PROJECT-dev/docker-compose.yml << TXT
+# Wouter de Bruijn Development project automaticly created with CI/CD tools
+# Used together with Github actions for automatic deployment of projects.
+
+services:
+  app:
+    image: $PROJECT-dev:latest
+    networks: [ traefik ]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$PROJECT-dev.rule=Host(\\\`$PROJECT.dev.ci.wouterdebruijn.nl\\\`)"
+      - "traefik.http.routers.$PROJECT.tls=true"
+      - "traefik.http.routers.$PROJECT.tls.certresolver=letsencrypt"
+networks:
+  traefik:
+    name: traefik_default
+TXT
+SCR
+
+su - $PROJECT <<SCR
+	echo "Finished! Project created."
+	echo ""
+	echo "Add the following to the github secrets:"
+	echo "HOST: runner.ci.wouterdebruijn.nl"
+	echo "USER: $PROJECT"
+	echo "KEY: \$(cat keys/$PROJECT)"
+SCR
